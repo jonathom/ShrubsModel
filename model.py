@@ -19,25 +19,30 @@ class ShrubManage(DynamicModel):
         self.dg = 0.125
         self.theta = 0.8
         
-        #this biotop only contains true and false values (so that I can test grass)
-        #true=grass, false=empty
-        self.grass = 0.1 > uniform(1)
+        #this is just for testing until we have the actual initial maps
+        #2=shrubs, 1=grass, 0=empty
+        random = uniform(1)
+        self.biotop = ifthenelse(0.1 > random,scalar(2),ifthenelse(0.2 > random, scalar(1),scalar(0)))
         
         
     def dynamic(self):
-        self.report(self.grass, "grass")
+        self.report(self.biotop, "biotop")
         random = uniform(1)
+        self.grass = self.biotop==1
         weg = empty2grass(self)
         wge = grass2empty(self)
         
-        ###### this calculation is only for testing the grass #######
         #grassGrowth contains all the newly grown grass
-        self.grassGrowth = ifthenelse(weg>random,True,self.grass)
-        self.grassGrowth = self.grassGrowth ^ self.grass
-        #grassDeath contains all the grass from the previous time that hasnt died this year
-        self.grassDeath = ifthenelse(wge>random,False,self.grass)
-        #grass at the next timestep will be everywhere where grass has newly grown or hasnt died
-        self.grass = self.grassGrowth | self.grassDeath;
+        self.grassGrowth = ifthenelse(weg>random,self.biotop==0,self.grass)
+        self.grassGrowth = ifthenelse(self.grassGrowth==True, self.grassGrowth ^ self.grass, False)
+        #grass can only grow in cells that have grass as a neighbor
+        hasGrassNeighbor = window4total(scalar(self.grass))
+        self.grassGrowth = ifthenelse(hasGrassNeighbor>0,self.grassGrowth,False)
+        #grassDeath true when a grass cell has died
+        self.grassDeath = ifthenelse(wge>random,self.grass,False)
+        #this biotop calculation is only for grass
+        self.biotop = ifthenelse(self.grassGrowth,1,self.biotop)
+        self.biotop = ifthenelse(self.grassDeath,0,self.biotop)
         
 def empty2grass(self):
     #TODO: discuss what kind of neighborhood we will use
