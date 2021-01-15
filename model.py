@@ -22,7 +22,7 @@ class ShrubManage(DynamicModel):
         #this is just for testing until we have the actual initial maps
         #2=shrubs, 1=grass, 0=empty
         random = uniform(1)
-        self.biotop = ifthenelse(0.1 > random,scalar(2),ifthenelse(0.2 > random, scalar(1),scalar(0)))
+        self.biotop = ifthenelse(0.1 > random,scalar(2),ifthenelse(0.9 > random, scalar(1),scalar(0)))
         
         
     def dynamic(self):
@@ -43,6 +43,24 @@ class ShrubManage(DynamicModel):
         #this biotop calculation is only for grass
         self.biotop = ifthenelse(self.grassGrowth,1,self.biotop)
         self.biotop = ifthenelse(self.grassDeath,0,self.biotop)
+       
+    
+        self.shrub = self.biotop == 2
+        wes = empty2shrub(self)
+        wgs = grass2shrub(self)
+        wse = shrub2empty(self)
+
+        #shrubGrowth contains newly grown shrubs (from empty and from grass)
+        shrubGrowthFromEmpty = ifthenelse(wes > random, self.biotop == 0, self.shrub)
+        shrubGrowthFromGrass = ifthenelse(wgs > random, self.biotop == 1, self.shrub)
+        self.shrubGrowth = pcror(shrubGrowthFromEmpty, shrubGrowthFromGrass)
+        self.shrubGrowth = ifthenelse(self.shrubGrowth == True, self.shrubGrowth ^ self.shrub, False)
+        #shrubDeath true when shrub cell dies
+        self.shrubDeath = ifthenelse(wse > random, self.shrub, False)
+        #update biotop for shrub
+        self.biotop = ifthenelse(self.shrubGrowth, 2, self.biotop)
+        self.biotop = ifthenelse(self.shrubDeath, 0, self.biotop)
+        
         
 def empty2grass(self):
     #TODO: discuss what kind of neighborhood we will use
@@ -54,6 +72,24 @@ def empty2grass(self):
 
 def grass2empty(self):
     return self.dg
+
+def empty2shrub(self):
+    #used von Neumann neighbourhood type (as defined on p.162, 2.2)
+    qse = window4total(scalar(self.shrub))/4
+    wes = ((1 - qse) * self.b1 + self.s1) * qse
+    return wes
+
+def grass2shrub(self):
+    qsg = window4total(scalar(self.shrub))/4
+    wgs = ((1 - qsg) * self.b2 + self.s2) * qsg
+    return wgs
+
+def shrub2empty(self):
+    qss = window4total(scalar(self.shrub))/4
+    wse = self.ds + self.c * qss
+    return wse
+
+
 
 nrOfTimeSteps=100
 myModel = ShrubManage()
