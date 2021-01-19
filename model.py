@@ -4,7 +4,7 @@ from pcraster.framework import *
 class ShrubManage(DynamicModel):
     def __init__(self):
         DynamicModel.__init__(self)
-        # this is just a test grid (the dimensions are not right)
+        # need to fix single shrub patches on bottom margin in initial map
         setclone('initialStateA.map')
         
     def initial(self):
@@ -19,12 +19,28 @@ class ShrubManage(DynamicModel):
         self.dg = 0.125
         self.theta = 0.8
         
-        #this is just for testing until we have the actual initial maps
+        #initializing parameters for management practices
+        self.year = 0
+        self.h = 0    # grazing pressure (0 to 1)
+        self.n = 5    # removal event period (in years)
+        self.f = 0.2  # fraction of shrub area removed
+       
         #2=shrubs, 1=grass, 0=empty
         self.biotop = self.readmap('initialStateA')
         
         
     def dynamic(self):
+        
+        #mechanical removal event every nth year with fraction f being removed
+        #TODO: Removed shrub cells selected randomly within patch, not one clump at the edge. How to do this?
+        self.year = self.year + 1
+        realization = uniform(1) < self.f
+        if (self.year == self.n):
+            self.shrubRemoved = pcrand(realization, self.shrub)
+            self.biotop = ifthenelse(self.shrubRemoved,0,self.biotop)
+            self.year = 0
+        
+        
         self.report(self.biotop, "biotop")
         random = uniform(1)
         self.grass = self.biotop==1
@@ -59,10 +75,10 @@ class ShrubManage(DynamicModel):
         
         
 def empty2grass(self):
-    #TODO: discuss what kind of neighborhood we will use
+    #used von Neumann neighbourhood for all functions (as defined on p.162, 2.2)
     qge = window4total(scalar(self.grass))/4
-    #30x40 is the size of the test biotop
-    pg = maptotal(scalar(self.grass))/(30*40)
+    #200x200 is the size of the test biotop
+    pg = maptotal(scalar(self.grass))/(200*200)
     weg = self.bg * qge + self.theta * pg
     return weg
 
@@ -70,14 +86,14 @@ def grass2empty(self):
     return self.dg
 
 def empty2shrub(self):
-    #used von Neumann neighbourhood type (as defined on p.162, 2.2)
     qse = window4total(scalar(self.shrub))/4
     wes = ((1 - qse) * self.b1 + self.s1) * qse
     return wes
 
 def grass2shrub(self):
+    # including grazing pressure self.h (last sentence in 2.7)
     qsg = window4total(scalar(self.shrub))/4
-    wgs = ((1 - qsg) * self.b2 + self.s2) * qsg
+    wgs = ((1 - qsg) * self.b2 * (1 - self.h) + self.s2) * qsg
     return wgs
 
 def shrub2empty(self):
