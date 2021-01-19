@@ -1,13 +1,16 @@
 from pcraster import *
 from pcraster.framework import *
 
-class ShrubManage(DynamicModel):
+class ShrubManage(DynamicModel, MonteCarloModel):
     def __init__(self):
-        DynamicModel.__init__(self)
         # this is just a test grid (the dimensions are not right)
         setclone('initialStateA.map')
-        
-    def initial(self):
+        MonteCarloModel.__init__(self)
+        DynamicModel.__init__(self)
+    
+    def premcloop(self):
+        #2=shrubs, 1=grass, 0=empty
+        self.biotop = self.readmap('initialStateA')
         self.b1 = 6.8
         self.b2 = 0.387
         self.b3 = 38.8
@@ -19,10 +22,8 @@ class ShrubManage(DynamicModel):
         self.dg = 0.125
         self.theta = 0.8
         
-        #this is just for testing until we have the actual initial maps
-        #2=shrubs, 1=grass, 0=empty
-        self.biotop = self.readmap('initialStateA')
-        
+    def initial(self):
+        pass
         
     def dynamic(self):
         self.report(self.biotop, "biotop")
@@ -57,6 +58,14 @@ class ShrubManage(DynamicModel):
         self.biotop = ifthenelse(self.shrubGrowth, 2, self.biotop)
         self.biotop = ifthenelse(self.shrubDeath, 0, self.biotop)
         
+    def postmcloop(self):
+        names = ['biotop']
+        sampleNumbers = self.sampleNumbers()
+        timesteps = self.timeSteps()
+        percentiles = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
+        mcpercentiles(names, percentiles, sampleNumbers, timesteps)
+        mcaveragevariance(names, sampleNumbers, timesteps)
+        
         
 def empty2grass(self):
     #TODO: discuss what kind of neighborhood we will use
@@ -86,8 +95,9 @@ def shrub2empty(self):
     return wse
 
 
-
-nrOfTimeSteps=100
+nrOfSamples = 2
+nrOfTimeSteps = 100
 myModel = ShrubManage()
-dynamicModel = DynamicFramework(myModel,nrOfTimeSteps)
-dynamicModel.run()
+dynamicModel = DynamicFramework(myModel, nrOfTimeSteps)
+mcModel = MonteCarloFramework(dynamicModel, nrOfSamples)
+mcModel.run()
