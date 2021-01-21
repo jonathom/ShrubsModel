@@ -27,6 +27,8 @@ class ShrubManage(DynamicModel, MonteCarloModel):
         
     def dynamic(self):
         self.report(self.biotop, "biotop")
+        self.b = scalar(self.biotop)
+        self.report(self.b, "b") # so that type of map is scalar
         random = uniform(1)
         self.grass = self.biotop==1
         weg = empty2grass(self)
@@ -59,7 +61,7 @@ class ShrubManage(DynamicModel, MonteCarloModel):
         self.biotop = ifthenelse(self.shrubDeath, 0, self.biotop)
         
     def postmcloop(self):
-        names = ['biotop']
+        names = ['b'] # change back to 'biotop' for original error
         sampleNumbers = self.sampleNumbers()
         timesteps = self.timeSteps()
         percentiles = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
