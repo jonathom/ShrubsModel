@@ -1,5 +1,8 @@
 from pcraster import *
 from pcraster.framework import *
+import math
+import matplotlib.pyplot as plt
+import numpy as np
 
 class ShrubManage(DynamicModel, MonteCarloModel):
     def __init__(self):
@@ -7,10 +10,11 @@ class ShrubManage(DynamicModel, MonteCarloModel):
         setclone('initialStateA.map')
         MonteCarloModel.__init__(self)
         DynamicModel.__init__(self)
-    
+
     def premcloop(self):
+        self.initialM = self.readmap('initialStateA')
         #2=shrubs, 1=grass, 0=empty
-        self.biotop = self.readmap('initialStateA')
+        self.biotop = self.initialM
         self.b1 = 6.8
         self.b2 = 0.387
         self.b3 = 38.8
@@ -21,11 +25,17 @@ class ShrubManage(DynamicModel, MonteCarloModel):
         self.ds = 0.028
         self.dg = 0.125
         self.theta = 0.8
-        
+
+        self.shrubExpansion = []
+        self.shrubDensity = []
+
     def initial(self):
-        pass
-        
+        self.biotop = self.initialM
+
     def dynamic(self):
+        prevShrubTotal = cellvalue(maptotal(scalar(self.biotop==2)),0)[0]
+        self.shrubDensity.append([prevShrubTotal/(200*200),self.currentTimeStep(),self.currentSampleNumber()])
+
         self.report(self.biotop, "biotop")
         self.b = scalar(self.biotop)
         self.report(self.b, "b") # so that type of map is scalar
@@ -33,7 +43,7 @@ class ShrubManage(DynamicModel, MonteCarloModel):
         self.grass = self.biotop==1
         weg = empty2grass(self)
         wge = grass2empty(self)
-        
+
         #grassGrowth contains all the newly grown grass
         self.grassGrowth = ifthenelse(weg>random,self.biotop==0,self.grass)
         self.grassGrowth = ifthenelse(self.grassGrowth==True, self.grassGrowth ^ self.grass, False)
@@ -42,8 +52,8 @@ class ShrubManage(DynamicModel, MonteCarloModel):
         #this biotop calculation is only for grass
         self.biotop = ifthenelse(self.grassGrowth,1,self.biotop)
         self.biotop = ifthenelse(self.grassDeath,0,self.biotop)
-       
-    
+
+
         self.shrub = self.biotop == 2
         wes = empty2shrub(self)
         wgs = grass2shrub(self)
@@ -59,18 +69,34 @@ class ShrubManage(DynamicModel, MonteCarloModel):
         #update biotop for shrub
         self.biotop = ifthenelse(self.shrubGrowth, 2, self.biotop)
         self.biotop = ifthenelse(self.shrubDeath, 0, self.biotop)
-        
+
+        postShrubTotal = cellvalue(maptotal(scalar(self.biotop==2)),0)[0]
+        intrinsicGrowth = math.log(postShrubTotal/prevShrubTotal)
+        self.shrubExpansion.append([intrinsicGrowth,self.currentTimeStep(),self.currentSampleNumber()])
+
     def postmcloop(self):
+        ''' this is to visualize the shrub growth per timestep (like figure )
+        for i in range(nrOfSamples):
+            plt.plot([item[1] for item in self.shrubExpansion if item[2] == i],[item[0] for item in self.shrubExpansion if item[2] == i])
+        '''
+        slope, intercept = np.polyfit(np.log([item[1] for item in self.shrubDensity if item[2] == 1]),
+                                      np.log([item[0] for item in self.shrubDensity if item[2] == 1]), 1)
+        # this is the slope of the  shrub Expansion
+        # if this is negative the shrubs are not expanding
+        print(slope)
+        plt.loglog([item[1] for item in self.shrubDensity if item[2] == 1],
+                   [item[0] for item in self.shrubDensity if item[2] == 1], '--')
+        plt.show()
+
         names = ['b'] # change back to 'biotop' for original error
         sampleNumbers = self.sampleNumbers()
         timesteps = self.timeSteps()
         percentiles = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
         mcpercentiles(names, percentiles, sampleNumbers, timesteps)
         mcaveragevariance(names, sampleNumbers, timesteps)
-        
-        
+
+
 def empty2grass(self):
-    #TODO: discuss what kind of neighborhood we will use
     qge = window4total(scalar(self.grass))/4
     #30x40 is the size of the test biotop
     pg = maptotal(scalar(self.grass))/(30*40)
