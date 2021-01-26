@@ -4,15 +4,13 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-class ShrubManage(DynamicModel, MonteCarloModel):
+class ShrubManage(DynamicModel):
     def __init__(self):
         DynamicModel.__init__(self)
         # need to fix single shrub patches on bottom margin in initial map
         setclone('initialStateA.map')
-        MonteCarloModel.__init__(self)
-        DynamicModel.__init__(self)
 
-    def premcloop(self):
+    def initial(self):
         self.b1 = 6.8
         self.b2 = 0.387
         self.b3 = 38.8
@@ -23,27 +21,20 @@ class ShrubManage(DynamicModel, MonteCarloModel):
         self.ds = 0.028
         self.dg = 0.125
         self.theta = 0.8
-        
+
         #initializing parameters for management practices
         self.year = 0
-        self.h = 0    # grazing pressure (0 to 1)
-        self.n = 5    # removal event period (in years)
-        self.f = 0.2  # fraction of shrub area removed
+        self.h = cell[0]          # grazing pressure (0 to 1)
+        self.n = cell[1]    # removal event period (in years)
+        self.f = cell[2]    # fraction of shrub area removed
 
-        self.initialMap = self.readmap('initialStateA')
-  
         #2=shrubs, 1=grass, 0=empty
-        self.biotop = self.initialMap
+        self.biotop = self.readmap('initialStateA')
 
-        self.shrubExpansion = []
-        self.shrubDensity = []
-
-    def initial(self):
-        self.biotop = self.initialMap
 
     def dynamic(self):
         prevShrubTotal = cellvalue(maptotal(scalar(self.biotop==2)),0)[0]
-        self.shrubDensity.append([prevShrubTotal/(200*200),self.currentTimeStep(),self.currentSampleNumber()])
+        shrubDensity.append([prevShrubTotal/(200*200),self.currentTimeStep()])
 
         #mechanical removal event every nth year with fraction f being removed
         #TODO: Removed shrub cells selected randomly within patch, not one clump at the edge. How to do this?
@@ -53,6 +44,7 @@ class ShrubManage(DynamicModel, MonteCarloModel):
             self.shrubRemoved = pcrand(realization, self.shrub)
             self.biotop = ifthenelse(self.shrubRemoved,0,self.biotop)
             self.year = 0
+
 
         self.report(self.biotop, "biotop")
         random = uniform(1)
@@ -86,32 +78,6 @@ class ShrubManage(DynamicModel, MonteCarloModel):
         self.biotop = ifthenelse(self.shrubGrowth, 2, self.biotop)
         self.biotop = ifthenelse(self.shrubDeath, 0, self.biotop)
 
-        postShrubTotal = cellvalue(maptotal(scalar(self.biotop==2)),0)[0]
-        # this corresponds to chapter 3.0 "logarithm of shrub cover in year t+1 divided by shrub cover in year t"
-        intrinsicGrowth = math.log(postShrubTotal/prevShrubTotal)
-        self.shrubExpansion.append([intrinsicGrowth,self.currentTimeStep(),self.currentSampleNumber()])
-
-    def postmcloop(self):
-        ''' this is to visualize the shrub growth per timestep (like figure 2b)
-        for i in range(nrOfSamples):
-            plt.plot([item[1] for item in self.shrubExpansion if item[2] == i],[item[0] for item in self.shrubExpansion if item[2] == i])
-        '''
-        slope, intercept = np.polyfit(np.log([item[1] for item in self.shrubDensity if item[2] == 1]),
-                                      np.log([item[0] for item in self.shrubDensity if item[2] == 1]), 1)
-        # this is the slope of the  shrub Expansion
-        # if this is negative the shrubs are not expanding
-        print(slope)
-        plt.loglog([item[1] for item in self.shrubDensity if item[2] == 1],
-                   [item[0] for item in self.shrubDensity if item[2] == 1], '--')
-        plt.show()
-
-        names = ['biotop']
-        sampleNumbers = self.sampleNumbers()
-        timesteps = self.timeSteps()
-        percentiles = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
-        mcpercentiles(names, percentiles, sampleNumbers, timesteps)
-        mcaveragevariance(names, sampleNumbers, timesteps)
-
 
 def empty2grass(self):
     #used von Neumann neighbourhood for all functions (as defined on p.162, 2.2)
@@ -140,10 +106,34 @@ def shrub2empty(self):
     wse = self.ds + self.c * qss
     return wse
 
-
-nrOfSamples = 2
-nrOfTimeSteps = 100
+# in here the shrub density is recorded for every timestep in the model run
+shrubDensity = []
+# this is a 2D array that stores a parameter configuration for every run
+# [<grazing pressure (0 to 1)>, <removal event period (in years)>, <fraction of shrub area removed>]
+parameterArray=np.array([
+    [[0, 2, 0.1],[0, 6, 0.1]],
+    [[0, 2, 0.8],[0, 6, 0.8]]])
+# this will store the resulting slope (initially filled with infinite values)
+resultArray=np.full((parameterArray.shape[0],parameterArray.shape[1]), np.inf)
+# number of timesteps for every run
+nrOfTimeSteps=100
+# model setup
 myModel = ShrubManage()
-dynamicModel = DynamicFramework(myModel, nrOfTimeSteps)
-mcModel = MonteCarloFramework(dynamicModel, nrOfSamples)
-mcModel.run()
+dynamicModel = DynamicFramework(myModel,nrOfTimeSteps)
+# looping through the parameterArray, to run the model for every parameter configuration
+for idx, row in enumerate(parameterArray, start=0):
+    for idy, cell in enumerate(row, start=0):
+        print(cell)
+        dynamicModel.run()
+        slope, intercept = np.polyfit(np.log([item[1] for item in shrubDensity]),
+                              np.log([item[0] for item in shrubDensity]), 1)
+        resultArray[idx][idy] = slope
+        ''' to visualize the shrub density slope for this run
+        plt.loglog([item[1] for item in shrubDensity],
+           [item[0] for item in shrubDensity], '--')
+        plt.show()
+        '''
+        shrubDensity = []
+
+print()
+print(resultArray)
