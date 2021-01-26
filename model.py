@@ -23,7 +23,7 @@ class ShrubManage(DynamicModel, MonteCarloModel):
         self.ds = 0.028
         self.dg = 0.125
         self.theta = 0.8
-
+        
         #initializing parameters for management practices
         self.year = 0
         self.h = 0    # grazing pressure (0 to 1)
@@ -31,6 +31,7 @@ class ShrubManage(DynamicModel, MonteCarloModel):
         self.f = 0.2  # fraction of shrub area removed
 
         self.initialMap = self.readmap('initialStateA')
+  
         #2=shrubs, 1=grass, 0=empty
         self.biotop = self.initialMap
 
@@ -52,7 +53,6 @@ class ShrubManage(DynamicModel, MonteCarloModel):
             self.shrubRemoved = pcrand(realization, self.shrub)
             self.biotop = ifthenelse(self.shrubRemoved,0,self.biotop)
             self.year = 0
-
 
         self.report(self.biotop, "biotop")
         random = uniform(1)
