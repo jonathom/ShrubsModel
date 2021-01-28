@@ -108,13 +108,17 @@ def shrub2empty(self):
 
 # in here the shrub density is recorded for every timestep in the model run
 shrubDensity = []
+# variable gp (grazing pressure) can be changed manually, e.g. for 3 total model runs (gp = 0, gp = 0.5, gp = 1)
+gp = 0
 # this is a 2D array that stores a parameter configuration for every run
 # [<grazing pressure (0 to 1)>, <removal event period (in years)>, <fraction of shrub area removed>]
 parameterArray=np.array([
-    [[0, 2, 0.1],[0, 6, 0.1]],
-    [[0, 2, 0.8],[0, 6, 0.8]]])
+    [[gp, 2, 0.1],[gp, 6, 0.1]],
+    [[gp, 2, 0.8],[gp, 6, 0.8]]])
 # this will store the resulting slope (initially filled with infinite values)
 resultArray=np.full((parameterArray.shape[0],parameterArray.shape[1]), np.inf)
+# storing 2d array with 0 (negative) and 1 (positive values) for visualization, derived from resultArray
+visualizationArray=np.full((parameterArray.shape[0],parameterArray.shape[1]), np.inf)
 # number of timesteps for every run
 nrOfTimeSteps=100
 # model setup
@@ -125,15 +129,35 @@ for idx, row in enumerate(parameterArray, start=0):
     for idy, cell in enumerate(row, start=0):
         print(cell)
         dynamicModel.run()
-        slope, intercept = np.polyfit(np.log([item[1] for item in shrubDensity]),
-                              np.log([item[0] for item in shrubDensity]), 1)
-        resultArray[idx][idy] = slope
+        #if shrubDensity is above 0.0, slope calculation with log(), if it becomes 0.0 at some point,
+        #resultArray is assigned -1 to avoid division by zero error
+        if all(item[0] for item in shrubDensity):
+            slope, intercept = np.polyfit(np.log([item[1] for item in shrubDensity]),
+                               np.log([item[0] for item in shrubDensity]), 1)
+            resultArray[idx][idy] = slope
+        else:
+            resultArray[idx][idy] = -1
         ''' to visualize the shrub density slope for this run
         plt.loglog([item[1] for item in shrubDensity],
            [item[0] for item in shrubDensity], '--')
         plt.show()
         '''
         shrubDensity = []
+        #filling visualizationArray with 0 or 1
+        if resultArray[idx][idy] > 0:
+            visualizationArray[idx][idy] = 1
+        else:
+            visualizationArray[idx][idy] = 0
 
 print()
 print(resultArray)
+print()
+print(visualizationArray)
+
+#to be modified...
+plt.imshow(visualizationArray, interpolation='none', cmap=plt.get_cmap('gray'))
+plt.xlabel("Fraction removed (in percent)", size=10)
+plt.ylabel("removal period (in years)", size=10)
+plt.xlim([1, 2])
+plt.ylim([1, 2])
+plt.show()
