@@ -36,6 +36,8 @@ class ShrubManage(DynamicModel):
     def dynamic(self):
         prevShrubTotal = cellvalue(maptotal(scalar(self.biotop==2)),0)[0]
         shrubDensity.append([prevShrubTotal/(200*200),self.currentTimeStep()])
+        
+        self.shrub = self.biotop == 2
 
         #mechanical removal event every nth year with fraction f being removed
         #TODO: Removed shrub cells selected randomly within patch, not one clump at the edge. How to do this?
@@ -59,7 +61,6 @@ class ShrubManage(DynamicModel):
         self.biotop = ifthenelse(self.grassDeath,0,self.biotop)
 
 
-        self.shrub = self.biotop == 2
         wes = empty2shrub(self)
         wgs = grass2shrub(self)
         wse = shrub2empty(self)
