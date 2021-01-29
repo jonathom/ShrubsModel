@@ -112,9 +112,23 @@ shrubDensity = []
 gp = 0
 # this is a 2D array that stores a parameter configuration for every run
 # [<grazing pressure (0 to 1)>, <removal event period (in years)>, <fraction of shrub area removed>]
+
+#parameterArray=np.array([
+#    [[gp, 2, 0.1],[gp, 6, 0.1]],
+#    [[gp, 2, 0.8],[gp, 6, 0.8]]])
+
 parameterArray=np.array([
-    [[gp, 2, 0.1],[gp, 6, 0.1]],
-    [[gp, 2, 0.8],[gp, 6, 0.8]]])
+    [[gp, 1, 0.1],[gp, 1, 0.2],[gp, 1, 0.3],[gp, 1, 0.4],[gp, 1, 0.5],[gp, 1, 0.6],[gp, 1, 0.7],[gp, 1, 0.8],[gp, 1, 0.9],[gp, 1, 1.0]],
+    [[gp, 2, 0.1],[gp, 2, 0.2],[gp, 2, 0.3],[gp, 2, 0.4],[gp, 2, 0.5],[gp, 2, 0.6],[gp, 2, 0.7],[gp, 2, 0.8],[gp, 2, 0.9],[gp, 2, 1.0]],
+    [[gp, 3, 0.1],[gp, 3, 0.2],[gp, 3, 0.3],[gp, 3, 0.4],[gp, 3, 0.5],[gp, 3, 0.6],[gp, 3, 0.7],[gp, 3, 0.8],[gp, 3, 0.9],[gp, 3, 1.0]],
+    [[gp, 4, 0.1],[gp, 4, 0.2],[gp, 4, 0.3],[gp, 4, 0.4],[gp, 4, 0.5],[gp, 4, 0.6],[gp, 4, 0.7],[gp, 4, 0.8],[gp, 4, 0.9],[gp, 4, 1.0]],
+    [[gp, 5, 0.1],[gp, 5, 0.2],[gp, 5, 0.3],[gp, 5, 0.4],[gp, 5, 0.5],[gp, 5, 0.6],[gp, 5, 0.7],[gp, 5, 0.8],[gp, 5, 0.9],[gp, 5, 1.0]],
+    [[gp, 6, 0.1],[gp, 6, 0.2],[gp, 6, 0.3],[gp, 6, 0.4],[gp, 6, 0.5],[gp, 6, 0.6],[gp, 6, 0.7],[gp, 6, 0.8],[gp, 6, 0.9],[gp, 6, 1.0]],
+    [[gp, 7, 0.1],[gp, 7, 0.2],[gp, 7, 0.3],[gp, 7, 0.4],[gp, 7, 0.5],[gp, 7, 0.6],[gp, 7, 0.7],[gp, 7, 0.8],[gp, 7, 0.9],[gp, 7, 1.0]],
+    [[gp, 8, 0.1],[gp, 8, 0.2],[gp, 8, 0.3],[gp, 8, 0.4],[gp, 8, 0.5],[gp, 8, 0.6],[gp, 8, 0.7],[gp, 8, 0.8],[gp, 8, 0.9],[gp, 8, 1.0]],
+    [[gp, 9, 0.1],[gp, 9, 0.2],[gp, 9, 0.3],[gp, 9, 0.4],[gp, 9, 0.5],[gp, 9, 0.6],[gp, 9, 0.7],[gp, 9, 0.8],[gp, 9, 0.9],[gp, 9, 1.0]],
+    [[gp,10, 0.1],[gp,10, 0.2],[gp,10, 0.3],[gp,10, 0.4],[gp,10, 0.5],[gp,10, 0.6],[gp,10, 0.7],[gp,10, 0.8],[gp,10, 0.9],[gp,10, 1.0]]])
+
 # this will store the resulting slope (initially filled with infinite values)
 resultArray=np.full((parameterArray.shape[0],parameterArray.shape[1]), np.inf)
 # storing 2d array with 0 (negative) and 1 (positive values) for visualization, derived from resultArray
