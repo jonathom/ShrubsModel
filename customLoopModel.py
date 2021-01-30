@@ -164,7 +164,7 @@ def runLoop(grazing,interval,mechanical):
 shrubDensity = []
 
 currentParameters = [-1,-1,-1]
-nrOfTimeSteps=100
+nrOfTimeSteps=10
 # model setup
 myModel = ShrubManage()
 dynamicModel = DynamicFramework(myModel,nrOfTimeSteps)
@@ -175,8 +175,11 @@ result = runLoop([1,1.9,1],[1,10,1],[0.1,1,0.1])
 plt.imshow(result, interpolation='none', cmap=plt.get_cmap('gray'))
 plt.xlabel("Fraction removed (in percent)", size=10)
 plt.ylabel("Removal period (in years)", size=10)
-plt.xticks(np.arange(0.1, 1.11, 0.1))
-plt.yticks(np.arange(1,10.01,1))
+plt.gca().invert_yaxis()
+plt.xticks(np.arange(10), ('0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '1'))
+#plt.xticks(np.arange(0.1, 1.11, 0.1))
+# plt.xticks(np.arange(0.1, 1, 0.1))
+#plt.yticks(np.arange(1,10.01,1))
 plt.show()
 
 ##### DO WE NEED THIS? #####
@@ -186,7 +189,9 @@ result = runLoop([0.1,1,0.1],[1,10,1],[0,0.9,1])
 plt.imshow(result, interpolation='none', cmap=plt.get_cmap('gray'))
 plt.xlabel("Intensity of grazing", size=10)
 plt.ylabel("XXX", size=10)
-plt.xticks(np.arange(1,10.01,1))
+plt.gca().invert_yaxis()
+plt.xticks(np.arange(10), ('0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '1'))
+#plt.xticks(np.arange(1,10.01,1))
 plt.yticks(np.arange(1,10.01,1))
 plt.show()
 ##########################
@@ -197,6 +202,8 @@ result = runLoop([0.1,1,0.1],[5,5.9,1],[0.1,1,0.1])
 plt.imshow(result, interpolation='none', cmap=plt.get_cmap('gray'))
 plt.xlabel("Intensity of grazing", size=10)
 plt.ylabel("Fraction removed (in percent)", size=10)
-plt.xticks(np.arange(0.1,1.11,0.1))
+plt.gca().invert_yaxis()
+plt.xticks(np.arange(10), ('0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '1'))
+#plt.xticks(np.arange(0.1,1.11,0.1))
 plt.yticks(np.arange(0.1,1.11,0.1))
 plt.show()
