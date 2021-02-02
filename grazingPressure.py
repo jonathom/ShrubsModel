@@ -24,6 +24,7 @@ class ShrubManage(DynamicModel):
 
         #initializing parameters for management practices
         self.year = 0
+        print(cell)
         self.h = cell[0]    # grazing pressure (0 to 1)
         self.n = cell[1]    # removal event period (in years)
         self.f = cell[2]    # fraction of shrub area removed
@@ -100,23 +101,6 @@ def shrub2empty(self):
 # in here the shrub density is recorded for every timestep in the model run
 shrubDensity = []
 
-# variable gp (grazing pressure) can be changed manually, e.g. for 3 total model runs (gp = 0, gp = 0.5, gp = 1)
-gp = 1
-# this is a 2D array that stores a parameter configuration for every run
-# [<grazing pressure (0 to 1)>, <removal event period (in years)>, <fraction of shrub area removed>]
-parameterArray=np.array([
-    [[gp, 1, 0.0],[gp, 1, 0.1],[gp, 1, 0.2],[gp, 1, 0.3],[gp, 1, 0.4],[gp, 1, 0.5],[gp, 1, 0.6],[gp, 1, 0.7],[gp, 1, 0.8],[gp, 1, 0.9],[gp, 1, 1.0]],
-    [[gp, 2, 0.0],[gp, 2, 0.1],[gp, 2, 0.2],[gp, 2, 0.3],[gp, 2, 0.4],[gp, 2, 0.5],[gp, 2, 0.6],[gp, 2, 0.7],[gp, 2, 0.8],[gp, 2, 0.9],[gp, 2, 1.0]],
-    [[gp, 3, 0.0],[gp, 3, 0.1],[gp, 3, 0.2],[gp, 3, 0.3],[gp, 3, 0.4],[gp, 3, 0.5],[gp, 3, 0.6],[gp, 3, 0.7],[gp, 3, 0.8],[gp, 3, 0.9],[gp, 3, 1.0]],
-    [[gp, 4, 0.0],[gp, 4, 0.1],[gp, 4, 0.2],[gp, 4, 0.3],[gp, 4, 0.4],[gp, 4, 0.5],[gp, 4, 0.6],[gp, 4, 0.7],[gp, 4, 0.8],[gp, 4, 0.9],[gp, 4, 1.0]],
-    [[gp, 5, 0.0],[gp, 5, 0.1],[gp, 5, 0.2],[gp, 5, 0.3],[gp, 5, 0.4],[gp, 5, 0.5],[gp, 5, 0.6],[gp, 5, 0.7],[gp, 5, 0.8],[gp, 5, 0.9],[gp, 5, 1.0]],
-    [[gp, 6, 0.0],[gp, 6, 0.1],[gp, 6, 0.2],[gp, 6, 0.3],[gp, 6, 0.4],[gp, 6, 0.5],[gp, 6, 0.6],[gp, 6, 0.7],[gp, 6, 0.8],[gp, 6, 0.9],[gp, 6, 1.0]],
-    [[gp, 7, 0.0],[gp, 7, 0.1],[gp, 7, 0.2],[gp, 7, 0.3],[gp, 7, 0.4],[gp, 7, 0.5],[gp, 7, 0.6],[gp, 7, 0.7],[gp, 7, 0.8],[gp, 7, 0.9],[gp, 7, 1.0]],
-    [[gp, 8, 0.0],[gp, 8, 0.1],[gp, 8, 0.2],[gp, 8, 0.3],[gp, 8, 0.4],[gp, 8, 0.5],[gp, 8, 0.6],[gp, 8, 0.7],[gp, 8, 0.8],[gp, 8, 0.9],[gp, 8, 1.0]],
-    [[gp, 9, 0.0],[gp, 9, 0.1],[gp, 9, 0.2],[gp, 9, 0.3],[gp, 9, 0.4],[gp, 9, 0.5],[gp, 9, 0.6],[gp, 9, 0.7],[gp, 9, 0.8],[gp, 9, 0.9],[gp, 9, 1.0]],
-    [[gp, 10,0.0],[gp,10, 0.1],[gp,10, 0.2],[gp,10, 0.3],[gp,10, 0.4],[gp,10, 0.5],[gp,10, 0.6],[gp,10, 0.7],[gp,10, 0.8],[gp,10, 0.9],[gp,10, 1.0]]])
-
-
 # this array sets up the run only for different grazing pressure, without any mechanical removal.
 # [<grazing pressure (0 to 1)>, <removal event period (in years)>, <fraction of shrub area removed>]
 grazingArray=np.array([
@@ -125,10 +109,6 @@ grazingArray=np.array([
 # initializing grazing array and fraction
 grazing = []
 grazingPressure = 0.0
-# this will store the resulting slope (initially filled with infinite values)
-resultArray=np.full((parameterArray.shape[0],parameterArray.shape[1]), np.inf)
-# storing 2d array with 0 for negative and 1 for positive values (for visualization) derived from resultArray
-visualizationArray=np.full((parameterArray.shape[0],parameterArray.shape[1]), np.inf)
 
 
 # number of timesteps for every run
@@ -137,25 +117,7 @@ nrOfTimeSteps=20
 myModel = ShrubManage()
 
 dynamicModel = DynamicFramework(myModel,nrOfTimeSteps)
-# looping through the parameterArray, to run the model for every parameter configuration
-for idx, row in enumerate(parameterArray, start=0):
-    for idy, cell in enumerate(row, start=0):
-        dynamicModel.run()
-        #if shrubDensity is above 0.0, slope calculation with log(), if it becomes 0.0 at some point,
-        #resultArray is assigned -1 to avoid division by zero error
-        if all(item[0] for item in shrubDensity):
-            slope, intercept = np.polyfit(np.log([item[1] for item in shrubDensity]),
-                                          np.log([item[0] for item in shrubDensity]), 1)
-            resultArray[idx][idy] = slope
-        else:
-            resultArray[idx][idy] = -1
 
-        shrubDensity = []
-        #filling visualizationArray with zero or one
-        if resultArray[idx][idy] > 0:
-            visualizationArray[idx][idy] = 1
-        else:
-            visualizationArray[idx][idy] = 0
 
 # looping through grazingArray
 for idx, row in enumerate(grazingArray, start=0):
@@ -168,25 +130,9 @@ for idx, row in enumerate(grazingArray, start=0):
         grazing.append([grazingArray[idx][idy], grazingPressure])
         grazingPressure = grazingPressure + 0.1
 
-print()
-print('Slope of shrub growth')
-print(resultArray)
-print()
-print('Shrub expansion: 0 = controlled, 1 = not controlled')
-print(visualizationArray)
 
 #plot grazing array without mechanical removal, grazing pressure fraction (x) and slope of growth rate (y)
 plt.plot([item[1] for item in grazing], [item[0] for item in grazing])
 plt.xlabel("grazing pressure (fraction)", size=10)
 plt.ylabel("slope of shrub growth", size=10)
-plt.show()
-
-#plot visualization array, mechanical removal fraction (x) and period (y) for given grazing pressure
-plt.imshow(transpose(visualizationArray), interpolation='none', cmap=plt.get_cmap('gray_r'),
-            origin='lower', extent=[0.0, 10.0, 0.0, 10.0])
-plt.xlabel("Fraction removed (in percent)", size=10)
-plt.ylabel("removal period (in years)", size=10)
-plt.xticks(np.arange(11), ('0', '10', '20', '30', '40', '50', '60', '70', '80', '90', '100'))
-plt.xlim([0, 10])
-plt.ylim([0, 10])
 plt.show()
